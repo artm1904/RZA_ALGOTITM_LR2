@@ -40,6 +40,6 @@ mtz_Alx = LB1(
 
 
 # ДЛЯ РАБОТЫ РАСКОММЕНТИРОВАТЬ
-mtz_Art.process()
-# mtz_Den.process()
+#mtz_Art.process()
+mtz_Den.process()
 # mtz_Alx.process()

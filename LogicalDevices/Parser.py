@@ -46,6 +46,7 @@ class Pasring_Comtrade():
     ia_chanel = []
     ib_chanel = []
     ic_chanel = []
+    ifake_chanel = []
     time = []
 
     def __post_init__(self):
@@ -56,6 +57,9 @@ class Pasring_Comtrade():
 
     def parsing(self):
         rec = comtrade.load(self.cfgFilePath, self.datFilePath)
+        if len(rec.analog) <= 3:
+             self.ifake_chanel =[0.0] * len(rec.time)
+
         self.ia_chanel = rec.analog[0]
         self.ib_chanel = rec.analog[1]
         self.ic_chanel = rec.analog[2]
@@ -66,6 +70,7 @@ class Pasring_Comtrade():
         plt.plot(self.time, self.ia_chanel, label="ia")
         plt.plot(self.time, self.ib_chanel, label="ib")
         plt.plot(self.time, self.ic_chanel, label="ic")
+        plt.plot(self.time, self.ifake_chanel, label="ifake_chanel")
         # Labels and title
         plt.xlabel("Time")
         plt.ylabel("Current")  # Or whatever the units are
@@ -121,6 +126,7 @@ class Pasring_CSV():
     ia_chanel = []
     ib_chanel = []
     ic_chanel = []
+    ifake_chanel = []
 
     def __post_init__(self):
         self.CurrentA = SAV()  # Инициализируем как экземпляры SAV
@@ -139,6 +145,8 @@ class Pasring_CSV():
                     self.ia_chanel.append(float(row[1])*1000)
                     self.ib_chanel.append(float(row[2])*1000)
                     self.ic_chanel.append(float(row[3])*1000)
+                    self.ifake_chanel.append(float(row[4])*1000)
+
                 except ValueError:
                     print(f"Skipping row due to invalid {row}")  # Handle potential errors
 
@@ -147,6 +155,7 @@ class Pasring_CSV():
         plt.plot(self.time, self.ia_chanel, label="ia")
         plt.plot(self.time, self.ib_chanel, label="ib")
         plt.plot(self.time, self.ic_chanel, label="ic")
+        plt.plot(self.time, self.ifake_chanel, label="ifake_chanel")
         # Labels and title
         plt.xlabel("Time")
         plt.ylabel("Current")  # Or whatever the units are
