@@ -3,7 +3,8 @@ from abc import abstractmethod, ABC
 from dataclasses import dataclass, field
 
 import comtrade
-from matplotlib import pyplot as plt
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 from LogicalDevices.LogicalNodes.CommonDataClasses.CommonDATypes.AnalogueValue import AnalogueValue
 from LogicalDevices.LogicalNodes.CommonDataClasses.SAV import SAV
@@ -33,35 +34,39 @@ class Parser(ABC):
 
 
 @dataclass
-class Pasring_Comtrade():
+class Pasring_Comtrade(Parser):
     time_stamp: int = 0
-    CurrentA_vn: SAV = field(init=False)  # Тип должен быть SAV
+    CurrentA_vn: SAV = field(init=False)
     CurrentB_vn: SAV = field(init=False)
     CurrentC_vn: SAV = field(init=False)
 
-    CurrentA_sn: SAV = field(init=False)  # Тип должен быть SAV
+    CurrentA_sn: SAV = field(init=False)
     CurrentB_sn: SAV = field(init=False)
     CurrentC_sn: SAV = field(init=False)
 
-    CurrentA_nn: SAV = field(init=False)  # Тип должен быть SAV
+    CurrentA_nn: SAV = field(init=False)
     CurrentB_nn: SAV = field(init=False)
     CurrentC_nn: SAV = field(init=False)
 
-    ia_vn_chanel = []
-    ib_vn_chanel = []
-    ic_vn_chanel = []
+    ia_vn_chanel: list[float] = field(default_factory=list)
+    ib_vn_chanel: list[float] = field(default_factory=list)
+    ic_vn_chanel: list[float] = field(default_factory=list)
 
-    ia_sn_chanel = []
-    ib_sn_chanel = []
-    ic_sn_chanel = []
+    ia_sn_chanel: list[float] = field(default_factory=list)
+    ib_sn_chanel: list[float] = field(default_factory=list)
+    ic_sn_chanel: list[float] = field(default_factory=list)
 
-    ia_nn_chanel = []
-    ib_nn_chanel = []
-    ic_nn_chanel = []
+    ia_nn_chanel: list[float] = field(default_factory=list)
+    ib_nn_chanel: list[float] = field(default_factory=list)
+    ic_nn_chanel: list[float] = field(default_factory=list)
 
-    lg_flt = []
+    lg_flt: list[float] = field(default_factory=list)
 
-    time = []
+    time: list[float] = field(default_factory=list)
+
+    cfgFilePath: str = ""
+    datFilePath: str = ""
+    csvFilePath: str = ""
 
     def __post_init__(self):
         self.CurrentA_vn = SAV()
@@ -79,114 +84,109 @@ class Pasring_Comtrade():
     def parsing(self):
         rec = comtrade.load(self.cfgFilePath, self.datFilePath)
 
-        if len(rec.analog) <= 8:
-            self.ia_vn_chanel = rec.analog[0]
-            self.ib_vn_chanel = rec.analog[1]
-            self.ic_vn_chanel = rec.analog[2]
+        self.ia_vn_chanel = rec.analog[0]
+        self.ib_vn_chanel = rec.analog[1]
+        self.ic_vn_chanel = rec.analog[2]
+        ia_vn_chanel_plot = list(rec.analog[0])
+        ib_vn_chanel_plot = list(rec.analog[1])
+        ic_vn_chanel_plot = list(rec.analog[2])
+        time_plot = list(rec.time)
 
+        if len(rec.analog) <= 8:
             self.ia_sn_chanel = [0.0] * len(rec.time)
             self.ib_sn_chanel = [0.0] * len(rec.time)
             self.ic_sn_chanel = [0.0] * len(rec.time)
+            ia_sn_chanel_plot = [0.0] * len(rec.time)
+            ib_sn_chanel_plot = [0.0] * len(rec.time)
+            ic_sn_chanel_plot = [0.0] * len(rec.time)
+
 
             self.ia_nn_chanel = rec.analog[3]
             self.ib_nn_chanel = rec.analog[4]
             self.ic_nn_chanel = rec.analog[5]
 
-            self.lg_flt = [0.0] * len(rec.time)
-
+            ia_nn_chanel_plot = list(rec.analog[3])
+            ib_nn_chanel_plot = list(rec.analog[4])
+            ic_nn_chanel_plot = list(rec.analog[5])
         else:
-            self.ia_vn_chanel = rec.analog[0]
-            self.ib_vn_chanel = rec.analog[1]
-            self.ic_vn_chanel = rec.analog[2]
-
             self.ia_sn_chanel = rec.analog[3]
             self.ib_sn_chanel = rec.analog[4]
             self.ic_sn_chanel = rec.analog[5]
+
+            ia_sn_chanel_plot = list(rec.analog[3])
+            ib_sn_chanel_plot = list(rec.analog[4])
+            ic_sn_chanel_plot = list(rec.analog[5])
 
             self.ia_nn_chanel = rec.analog[6]
             self.ib_nn_chanel = rec.analog[7]
             self.ic_nn_chanel = rec.analog[8]
 
-            self.lg_flt = [0.0] * len(rec.time)
+            ia_nn_chanel_plot = list(rec.analog[6])
+            ib_nn_chanel_plot = list(rec.analog[7])
+            ic_nn_chanel_plot = list(rec.analog[8])
 
-        self.time = rec.time
+        self.lg_flt = [0.0] * len(rec.time)
+
+        # Create plot
+        fig = go.Figure()
+
+        # Add traces
+        fig.add_trace(go.Scatter(x=time_plot, y=ia_vn_chanel_plot, mode='lines', name='ia_vn'))
+        fig.add_trace(go.Scatter(x=time_plot, y=ib_vn_chanel_plot, mode='lines', name='ib_vn'))
+        fig.add_trace(go.Scatter(x=time_plot, y=ic_vn_chanel_plot, mode='lines', name='ic_vn'))
 
         if len(rec.analog) <= 8:
-            # Plotting
-            plt.figure()
-            plt.plot(self.time, self.ia_vn_chanel, label="ia_vn")
-            plt.plot(self.time, self.ib_vn_chanel, label="ib_vn")
-            plt.plot(self.time, self.ic_vn_chanel, label="ic_vn")
-
-            plt.plot(self.time, self.ia_nn_chanel, label="ia_nn")
-            plt.plot(self.time, self.ib_nn_chanel, label="ib_nn")
-            plt.plot(self.time, self.ic_nn_chanel, label="ic_nn")
-
-            # Labels and title
-            plt.xlabel("Time")
-            plt.ylabel("Current")  # Or whatever the units are
-            plt.title("Current vs. Time")
-            plt.legend()
-            plt.savefig("INPUT_REACTOR.png")
+            fig.add_trace(go.Scatter(x=time_plot, y=ia_nn_chanel_plot, mode='lines', name='ia_nn'))
+            fig.add_trace(go.Scatter(x=time_plot, y=ib_nn_chanel_plot, mode='lines', name='ib_nn'))
+            fig.add_trace(go.Scatter(x=time_plot, y=ic_nn_chanel_plot, mode='lines', name='ic_nn'))
         else:
-            # Plotting
-            plt.figure()
-            plt.plot(self.time, self.ia_vn_chanel, label="ia_vn")
-            plt.plot(self.time, self.ib_vn_chanel, label="ib_vn")
-            plt.plot(self.time, self.ic_vn_chanel, label="ic_vn")
+            fig.add_trace(go.Scatter(x=time_plot, y=ia_sn_chanel_plot, mode='lines', name='ia_sn'))
+            fig.add_trace(go.Scatter(x=time_plot, y=ib_sn_chanel_plot, mode='lines', name='ib_sn'))
+            fig.add_trace(go.Scatter(x=time_plot, y=ic_sn_chanel_plot, mode='lines', name='ic_sn'))
+            fig.add_trace(go.Scatter(x=time_plot, y=ia_nn_chanel_plot, mode='lines', name='ia_nn'))
+            fig.add_trace(go.Scatter(x=time_plot, y=ib_nn_chanel_plot, mode='lines', name='ib_nn'))
+            fig.add_trace(go.Scatter(x=time_plot, y=ic_nn_chanel_plot, mode='lines', name='ic_nn'))
 
-            plt.plot(self.time, self.ia_sn_chanel, label="ia_sn")
-            plt.plot(self.time, self.ib_sn_chanel, label="ib_sn")
-            plt.plot(self.time, self.ic_sn_chanel, label="ic_sn")
+        # Update layout
+        fig.update_layout(
+            title="Current vs. Time",
+            xaxis_title="Time",
+            yaxis_title="Current"
+        )
 
-            plt.plot(self.time, self.ia_nn_chanel, label="ia_nn")
-            plt.plot(self.time, self.ib_nn_chanel, label="ib_nn")
-            plt.plot(self.time, self.ic_nn_chanel, label="ic_nn")
-
-            # Labels and title
-            plt.xlabel("Time")
-            plt.ylabel("Current")  # Or whatever the units are
-            plt.title("Current vs. Time")
-            plt.legend()
-            plt.savefig("INPUT_3xTrans.png")
+        fig.write_html("INPUT_COMTRADE.html")
 
     def process(self):
         try:
-            # Создаем AnalogueValue для каждого канала, используя FLOAT32 для правильной инициализации
             analogue_a_vn = AnalogueValue()
-            analogue_a_vn.f.value = self.ia_vn_chanel[self.time_stamp] * 1000  #Умножаем на 1000
+            analogue_a_vn.f.value = self.ia_vn_chanel[self.time_stamp] * 1000
             analogue_b_vn = AnalogueValue()
-            analogue_b_vn.f.value = self.ib_vn_chanel[self.time_stamp] * 1000  #Умножаем на 1000
+            analogue_b_vn.f.value = self.ib_vn_chanel[self.time_stamp] * 1000
             analogue_c_vn = AnalogueValue()
-            analogue_c_vn.f.value = self.ic_vn_chanel[self.time_stamp] * 1000  #Умножаем на 1000
+            analogue_c_vn.f.value = self.ic_vn_chanel[self.time_stamp] * 1000
 
             analogue_a_sn = AnalogueValue()
-            analogue_a_sn.f.value = self.ia_sn_chanel[self.time_stamp] * 1000  #Умножаем на 1000
+            analogue_a_sn.f.value = self.ia_sn_chanel[self.time_stamp] * 1000
             analogue_b_sn = AnalogueValue()
-            analogue_b_sn.f.value = self.ib_sn_chanel[self.time_stamp] * 1000  #Умножаем на 1000
+            analogue_b_sn.f.value = self.ib_sn_chanel[self.time_stamp] * 1000
             analogue_c_sn = AnalogueValue()
-            analogue_c_sn.f.value = self.ib_sn_chanel[self.time_stamp] * 1000  #Умножаем на 1000
-
-
+            analogue_c_sn.f.value = self.ic_sn_chanel[self.time_stamp] * 1000
 
             analogue_a_nn = AnalogueValue()
-            analogue_a_nn.f.value = self.ia_nn_chanel[self.time_stamp] * 1000  #Умножаем на 1000
+            analogue_a_nn.f.value = self.ia_nn_chanel[self.time_stamp] * 1000
             analogue_b_nn = AnalogueValue()
-            analogue_b_nn.f.value = self.ib_nn_chanel[self.time_stamp] * 1000  #Умножаем на 1000
+            analogue_b_nn.f.value = self.ib_nn_chanel[self.time_stamp] * 1000
             analogue_c_nn = AnalogueValue()
-            analogue_c_nn.f.value = self.ib_nn_chanel[self.time_stamp] * 1000  #Умножаем на 1000
-
+            analogue_c_nn.f.value = self.ic_nn_chanel[self.time_stamp] * 1000
 
             # Создаем SAV объекты, используя AnalogueValue
             self.CurrentA_vn.instMag = analogue_a_vn
             self.CurrentB_vn.instMag = analogue_b_vn
             self.CurrentC_vn.instMag = analogue_c_vn
 
-
             self.CurrentA_sn.instMag = analogue_a_sn
             self.CurrentB_sn.instMag = analogue_b_sn
             self.CurrentC_sn.instMag = analogue_c_sn
-
 
             self.CurrentA_nn.instMag = analogue_a_nn
             self.CurrentB_nn.instMag = analogue_b_nn
@@ -197,13 +197,13 @@ class Pasring_Comtrade():
 
         except IndexError:
             print(f"IndexError: time_stamp {self.time_stamp} is out of range.")
-            return None, None, None
+            return None, None, None, None, None, None, None, None, None
         except TypeError as e:
             print(f"TypeError: {e}")
-            return None, None, None
+            return None, None, None, None, None, None, None, None, None
         except Exception as e:
             print(f"Неизвестная ошибка: {e}")
-            return None, None, None
+            return None, None, None, None, None, None, None, None, None
 
     def getTime(self):
         return self.time
@@ -215,19 +215,23 @@ class Pasring_Comtrade():
 
 
 @dataclass
-class Pasring_CSV():
+class Pasring_CSV(Parser):
     time_stamp: int = 0
-    CurrentA: SAV = field(init=False)  # Тип должен быть SAV
+    CurrentA: SAV = field(init=False)
     CurrentB: SAV = field(init=False)
     CurrentC: SAV = field(init=False)
-    time = []
-    ia_chanel = []
-    ib_chanel = []
-    ic_chanel = []
-    ifake_chanel = []
+    time: list[float] = field(default_factory=list)
+    ia_chanel: list[float] = field(default_factory=list)
+    ib_chanel: list[float] = field(default_factory=list)
+    ic_chanel: list[float] = field(default_factory=list)
+    ifake_chanel: list[float] = field(default_factory=list)
+
+    cfgFilePath: str = ""
+    datFilePath: str = ""
+    csvFilePath: str = ""
 
     def __post_init__(self):
-        self.CurrentA = SAV()  # Инициализируем как экземпляры SAV
+        self.CurrentA = SAV()
         self.CurrentB = SAV()
         self.CurrentC = SAV()
 
@@ -238,32 +242,34 @@ class Pasring_CSV():
 
             for row in reader:
                 try:
-                    # Convert data to numeric types (float)
                     self.time.append(float(row[0]))
                     self.ia_chanel.append(float(row[1]) * 1000)
                     self.ib_chanel.append(float(row[2]) * 1000)
                     self.ic_chanel.append(float(row[3]) * 1000)
                     self.ifake_chanel.append(float(row[4]) * 1000)
-
                 except ValueError:
-                    print(f"Skipping row due to invalid {row}")  # Handle potential errors
+                    print(f"Skipping row due to invalid {row}")
 
-        # Plotting
-        plt.figure()
-        plt.plot(self.time, self.ia_chanel, label="ia")
-        plt.plot(self.time, self.ib_chanel, label="ib")
-        plt.plot(self.time, self.ic_chanel, label="ic")
-        plt.plot(self.time, self.ifake_chanel, label="ifake_chanel")
-        # Labels and title
-        plt.xlabel("Time")
-        plt.ylabel("Current")  # Or whatever the units are
-        plt.title("Current vs. Time")
-        plt.legend()
-        plt.savefig("INPUT.png")
+        # Create plot
+        fig = go.Figure()
+
+        # Add traces
+        fig.add_trace(go.Scatter(x=self.time, y=self.ia_chanel, mode='lines', name='ia'))
+        fig.add_trace(go.Scatter(x=self.time, y=self.ib_chanel, mode='lines', name='ib'))
+        fig.add_trace(go.Scatter(x=self.time, y=self.ic_chanel, mode='lines', name='ic'))
+        fig.add_trace(go.Scatter(x=self.time, y=self.ifake_chanel, mode='lines', name='ifake_chanel'))
+
+        # Update layout
+        fig.update_layout(
+            title="Current vs. Time",
+            xaxis_title="Time",
+            yaxis_title="Current"
+        )
+
+        fig.write_html("INPUT_CSV.html")
 
     def process(self):
         try:
-            # Создаем AnalogueValue для каждого канала, используя FLOAT32 для правильной инициализации
             analogue_a = AnalogueValue()
             analogue_a.f.value = self.ia_chanel[self.time_stamp]
             analogue_b = AnalogueValue()

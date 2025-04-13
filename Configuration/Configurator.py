@@ -1,8 +1,7 @@
 from dataclasses import dataclass
 
-from PIL.ImageColor import colormap
-from matplotlib import pyplot as plt
-import comtrade
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 from LogicalDevices.LD_Ctrl import LDCtrl
 from LogicalDevices.LD_PROT import LDProt_MTZ
@@ -13,13 +12,10 @@ from LogicalDevices.LogicalNodes.CommonDataClasses.CommonDATypes.AnalogueValue i
 from LogicalDevices.LogicalNodes.CommonDataClasses.CommonDATypes.BasicTypes.INT32 import INT32
 from LogicalDevices.LogicalNodes.CommonDataClasses.ING import ING
 from LogicalDevices.Parser import Parser
-
-# from LogicalDevices.Pasring_Comtrade import Pasring_Comtrade
 from LogicalDevices.LD_Meas import LDMeasurement_TCTR_Fur, LD_Meas
 
 @dataclass
 class LB1:
-
     cfgFilePath : str
     datFilePath : str
     csvFilePath : str
@@ -31,7 +27,6 @@ class LB1:
     stg3Time : int
     ldMeas : LD_Meas
     parser : Parser
-
 
     def process(self):
         parser = self.parser
@@ -83,7 +78,6 @@ class LB1:
         op_chanel = []
         str_chanel = []
 
-
         for i in range(2000):
             parser.process()
 
@@ -124,31 +118,34 @@ class LB1:
 
         time = parser.getTime()
 
-        # Plotting I_filtred
-        plt.figure()
-        plt.plot(time, ia_chanel, label="Ia", color='orange')
-        plt.plot(time, ib_chanel, label="Ib", color='green')
-        plt.plot(time, ic_chanel, label="Ic", color='red')
-        plt.plot(time,mtz_1 , label="mtz1", color='black', linestyle='--')
-        plt.plot(time,mtz_2 , label="mtz2", color='black', linestyle='--')
-        plt.plot(time,mtz_3 , label="mtz3", color='black', linestyle='--')
-        # Labels and title
-        plt.xlabel("Time")
-        plt.ylabel("Current")
-        plt.title("Current vs. Time")
-        plt.legend()
-        plt.savefig("FILTER_OUT.png")
+        # Create subplots
+        fig = make_subplots(rows=2, cols=1, subplot_titles=("Current vs. Time", "Logical Signal vs. Time"))
 
+        # Add traces for I_filtered plot
+        fig.add_trace(go.Scatter(x=time, y=ia_chanel, mode='lines', name='Ia', marker=dict(color='orange')), row=1, col=1)
+        fig.add_trace(go.Scatter(x=time, y=ib_chanel, mode='lines', name='Ib', marker=dict(color='green')), row=1, col=1)
+        fig.add_trace(go.Scatter(x=time, y=ic_chanel, mode='lines', name='Ic', marker=dict(color='red')), row=1, col=1)
+        fig.add_trace(go.Scatter(x=time, y=mtz_1, mode='lines', name='mtz1', marker=dict(color='black', dash='dash')), row=1, col=1)
+        fig.add_trace(go.Scatter(x=time, y=mtz_2, mode='lines', name='mtz2', marker=dict(color='black', dash='dash')), row=1, col=1)
+        fig.add_trace(go.Scatter(x=time, y=mtz_3, mode='lines', name='mtz3', marker=dict(color='black', dash='dash')), row=1, col=1)
 
-        # Plotting Str + Op
-        plt.figure()
-        plt.plot(parser.getTime(), op_chanel, label="Op")
-        plt.plot(parser.getTime(), str_chanel, label="Str")
+        # Add traces for Str + Op plot
+        fig.add_trace(go.Scatter(x=time, y=op_chanel, mode='lines', name='Op'), row=2, col=1)
+        fig.add_trace(go.Scatter(x=time, y=str_chanel, mode='lines', name='Str'), row=2, col=1)
 
-        # Labels and title
-        plt.xlabel("Time")
-        plt.ylabel("Logical Signal LD_Prot")
-        plt.title("Logical signal vs. Time")
-        plt.legend()
-        plt.savefig("PROT_OUTPUT.png")
+        # Update layout
+        fig.update_layout(
+            title_text="RZA Algorithm",
+            height=800,
+            width=1200,
+            showlegend=True
+        )
 
+        # Update x and y axes titles
+        fig.update_xaxes(title_text="Time", row=1, col=1)
+        fig.update_yaxes(title_text="Current", row=1, col=1)
+        fig.update_xaxes(title_text="Time", row=2, col=1)
+        fig.update_yaxes(title_text="Logical Signal LD_Prot", row=2, col=1)
+
+        # Save the plot to HTML file
+        fig.write_html("RZA_Algorithm_Plot.html")
